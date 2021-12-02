@@ -2,10 +2,44 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
+	"log"
 	"net/http"
 )
 
-func rssHandler(w http.ResponseWriter, r *http.Request) {
+func Wrapper(f *FeedHandler) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		f.Handle(w, r)
+	}
+}
+
+type FeedHandler struct {
+	storage FeedStorage
+}
+
+func NewFeedHandler(s FeedStorage) (*FeedHandler, error) {
+	if s == nil {
+		return nil, fmt.Errorf("storage must be provided")
+	}
+
+	return &FeedHandler{storage: s}, nil
+}
+
+func (f *FeedHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	log.Printf("feed called")
+
+	res, err := f.storage.Get()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("storage is empty, no feed to provide")
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/xml")
+	w.Write([]byte(res))
+}
+
+func (f *FeedHandler) buildFeed() ([]byte, error) {
 	type Item struct {
 		Title       string `xml:"title"`
 		Link        string `xml:"link"`
@@ -36,10 +70,8 @@ func rssHandler(w http.ResponseWriter, r *http.Request) {
 
 	x, err := xml.MarshalIndent(feed, "", "  ")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
-	w.Header().Set("Content-Type", "application/xml")
-	w.Write(x)
+	return x, nil
 }
