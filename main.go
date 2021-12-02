@@ -26,19 +26,24 @@ func init() {
 }
 
 func main() {
+	ctx := context.Background()
+
+	feedProvider, err := provider.NewFeedProvider(sourceURL, feedStorage, frequency)
+	if err != nil {
+		log.Fatalln("failed to create feed provider")
+	}
+
+	startErr := feedProvider.Start()
+	if startErr != nil {
+		log.Fatalln("failed to start feed provider")
+	}
+
+	go feedProvider.Run(ctx)
+
 	feedHandler, err := feedhttp.NewFeedHandler(feedStorage)
 	if err != nil {
 		log.Fatalf("failed to create feed handler: %w", err)
 	}
-
-	feedProvider, err := provider.NewFeedProvider(sourceURL, feedStorage, frequency)
-	if err != nil {
-		log.Fatalln("failed to init feed provider")
-	}
-
-	ctx := context.Background()
-
-	go feedProvider.Run(ctx)
 
 	http.HandleFunc("/", feedhttp.Wrapper(feedHandler))
 	log.Fatalln(http.ListenAndServe(":"+port, nil))

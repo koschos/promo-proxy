@@ -28,16 +28,22 @@ func NewFeedProvider(s string, f storage.FeedProxyStorage, i time.Duration) (*Fe
 	return &FeedProvider{sourceURL: s, feedStorage: f, frequency: i}, nil
 }
 
+func (s FeedProvider) Start() error {
+	err := s.iterate()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s FeedProvider) Run(ctx context.Context) {
 	for {
-		err := s.iterate()
-		if err != nil {
-			log.Println("error: %w", err)
-		}
-
 		select {
 		case <-time.After(s.frequency):
-			continue
+			err := s.iterate()
+			if err != nil {
+				log.Println("error: %w", err)
+			}
 		case <-ctx.Done():
 			return
 		}
