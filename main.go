@@ -1,5 +1,11 @@
 package main
 
+import (
+	"log"
+	"net/http"
+)
+
 func main() {
-	println("test")
+	http.HandleFunc("/", rssHandler)
+	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
