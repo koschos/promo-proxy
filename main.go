@@ -18,11 +18,11 @@ const (
 	port      = "3000"
 )
 
-var feedStorage storage.FeedStorage
+var feedStorage storage.FeedProxyStorage
 
 func init() {
 	lock := &sync.Mutex{}
-	feedStorage = storage.NewMemoryStorage(lock)
+	feedStorage = storage.NewMemoryStorage(lock, &storage.DummyFeedTransformer{})
 }
 
 func main() {

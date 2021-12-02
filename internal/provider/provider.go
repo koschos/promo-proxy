@@ -13,11 +13,11 @@ import (
 
 type FeedProvider struct {
 	sourceURL   string
-	feedStorage storage.FeedStorage
+	feedStorage storage.FeedProxyStorage
 	frequency   time.Duration
 }
 
-func NewFeedProvider(s string, f storage.FeedStorage, i time.Duration) (*FeedProvider, error) {
+func NewFeedProvider(s string, f storage.FeedProxyStorage, i time.Duration) (*FeedProvider, error) {
 	if s == "" {
 		return nil, fmt.Errorf("source url must be provided")
 	}

@@ -5,23 +5,26 @@ import (
 	"sync"
 )
 
-type FeedStorage interface {
+type FeedProxyStorage interface {
 	Update(feed string) error
 	Get() (string, error)
 }
 
 type MemoryFeedStorage struct {
-	lock *sync.Mutex
-	data string
+	lock        *sync.Mutex
+	transformer FeedTransformer
+	source      string
+	target      string
 }
 
-func NewMemoryStorage(l *sync.Mutex) *MemoryFeedStorage {
-	return &MemoryFeedStorage{lock: l}
+func NewMemoryStorage(l *sync.Mutex, t FeedTransformer) *MemoryFeedStorage {
+	return &MemoryFeedStorage{lock: l, transformer: t}
 }
 
 func (m *MemoryFeedStorage) Update(feed string) error {
 	m.lock.Lock()
-	m.data = feed
+	m.source = feed
+	m.target = m.transformer.Transform(feed)
 	m.lock.Unlock()
 	return nil
 }
@@ -29,11 +32,11 @@ func (m *MemoryFeedStorage) Update(feed string) error {
 func (m *MemoryFeedStorage) Get() (string, error) {
 	var res string
 	m.lock.Lock()
-	res = m.data
+	res = m.target
 	m.lock.Unlock()
 
 	if res == "" {
-		return "", fmt.Errorf("not found")
+		return "", fmt.Errorf("target not found")
 	}
 
 	return res, nil

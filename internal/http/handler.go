@@ -15,10 +15,10 @@ func Wrapper(f *FeedHandler) func(http.ResponseWriter, *http.Request) {
 }
 
 type FeedHandler struct {
-	feedStorage storage.FeedStorage
+	feedStorage storage.FeedProxyStorage
 }
 
-func NewFeedHandler(s storage.FeedStorage) (*FeedHandler, error) {
+func NewFeedHandler(s storage.FeedProxyStorage) (*FeedHandler, error) {
 	if s == nil {
 		return nil, fmt.Errorf("feed storage must be provided")
 	}
