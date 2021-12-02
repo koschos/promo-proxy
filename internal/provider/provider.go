@@ -1,4 +1,4 @@
-package main
+package provider
 
 import (
 	"context"
@@ -7,26 +7,28 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/koschos/promo-proxy/internal/storage"
 )
 
-type SourceLoader struct {
-	sourceURL string
-	storage   FeedStorage
-	interval  time.Duration
+type FeedProvider struct {
+	sourceURL   string
+	feedStorage storage.FeedStorage
+	frequency   time.Duration
 }
 
-func NewSourceLoader(s string, f FeedStorage, i time.Duration) (*SourceLoader, error) {
+func NewFeedProvider(s string, f storage.FeedStorage, i time.Duration) (*FeedProvider, error) {
 	if s == "" {
 		return nil, fmt.Errorf("source url must be provided")
 	}
 	if f == nil {
-		return nil, fmt.Errorf("storage must be provided")
+		return nil, fmt.Errorf("feedStorage must be provided")
 	}
 
-	return &SourceLoader{sourceURL: s, storage: f, interval: i}, nil
+	return &FeedProvider{sourceURL: s, feedStorage: f, frequency: i}, nil
 }
 
-func (s SourceLoader) Run(ctx context.Context) {
+func (s FeedProvider) Run(ctx context.Context) {
 	for {
 		err := s.iterate()
 		if err != nil {
@@ -34,7 +36,7 @@ func (s SourceLoader) Run(ctx context.Context) {
 		}
 
 		select {
-		case <-time.After(s.interval):
+		case <-time.After(s.frequency):
 			continue
 		case <-ctx.Done():
 			return
@@ -42,7 +44,7 @@ func (s SourceLoader) Run(ctx context.Context) {
 	}
 }
 
-func (s SourceLoader) iterate() error {
+func (s FeedProvider) iterate() error {
 	log.Printf("source loading from %s", s.sourceURL)
 
 	source, err := s.load()
@@ -50,17 +52,17 @@ func (s SourceLoader) iterate() error {
 		return fmt.Errorf("failed to load source: %w", err)
 	}
 
-	err = s.storage.Update(source)
+	err = s.feedStorage.Update(source)
 	if err != nil {
 		return fmt.Errorf("failed to write source: %w", err)
 	}
 
-	log.Println("source saved to storage")
+	log.Println("source saved to feedStorage")
 
 	return nil
 }
 
-func (s SourceLoader) load() (string, error) {
+func (s FeedProvider) load() (string, error) {
 	res, err := http.Get(s.sourceURL)
 	if err != nil {
 		return "", err
