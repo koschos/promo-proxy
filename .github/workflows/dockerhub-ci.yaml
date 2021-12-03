@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*.*.*"
+    branches: [ master ]
+
+  pull_request:
+      branches: [ master ]
 
 jobs:
 
@@ -36,7 +40,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./
-          file: ./infra/Dockerfile
+          file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/promo-proxy:latest
