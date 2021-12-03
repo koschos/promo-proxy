@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	sourceURL = "https://ukr-net1.webnode.com.ua/rss/novini.xml"
+	sourceURL = "https://intertool.ua/xml_output/yandex_market.xml"
 	frequency = 10 * time.Minute
 	port      = "3000"
 )
@@ -22,7 +22,13 @@ var feedStorage storage.FeedProxyStorage
 
 func init() {
 	lock := &sync.Mutex{}
-	feedStorage = storage.NewMemoryStorage(lock, &storage.DummyFeedTransformer{})
+	replacements := []storage.Replacement{
+		storage.NewReplacement("available=\"false\"", "available=\"\""),
+		storage.NewReplacement("available-kiev=\"false\"", "available-kiev=\"\""),
+		storage.NewReplacement("available-kharkov=\"false\"", "available-kharkov=\"\""),
+	}
+
+	feedStorage = storage.NewMemoryStorage(lock, storage.NewSimpleTransformer(replacements))
 }
 
 func main() {
