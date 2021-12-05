@@ -12,20 +12,24 @@ import (
 )
 
 type FeedProvider struct {
-	sourceURL   string
-	feedStorage storage.FeedProxyStorage
-	frequency   time.Duration
+	sourceURL       string
+	frequency       time.Duration
+	feedTransformer FeedTransformer
+	feedStorage     storage.FeedStorage
 }
 
-func NewFeedProvider(s string, f storage.FeedProxyStorage, i time.Duration) (*FeedProvider, error) {
+func NewFeedProvider(s string, i time.Duration, t FeedTransformer, f storage.FeedStorage) (*FeedProvider, error) {
 	if s == "" {
 		return nil, fmt.Errorf("source url must be provided")
 	}
+	if t == nil {
+		return nil, fmt.Errorf("feed transformer must be provided")
+	}
 	if f == nil {
-		return nil, fmt.Errorf("feedStorage must be provided")
+		return nil, fmt.Errorf("feed storage must be provided")
 	}
 
-	return &FeedProvider{sourceURL: s, feedStorage: f, frequency: i}, nil
+	return &FeedProvider{sourceURL: s, frequency: i, feedTransformer: t, feedStorage: f}, nil
 }
 
 func (s FeedProvider) Start() error {
@@ -51,19 +55,21 @@ func (s FeedProvider) Run(ctx context.Context) {
 }
 
 func (s FeedProvider) iterate() error {
-	log.Printf("source loading from %s", s.sourceURL)
+	log.Printf("source loading from %s ...", s.sourceURL)
 
 	source, err := s.load()
 	if err != nil {
 		return fmt.Errorf("failed to load source: %w", err)
 	}
 
-	err = s.feedStorage.Update(source)
+	res := s.feedTransformer.Transform(source)
+
+	err = s.feedStorage.Save(res)
 	if err != nil {
 		return fmt.Errorf("failed to write source: %w", err)
 	}
 
-	log.Println("source saved to feedStorage")
+	log.Println("transformed feed saved to a storage")
 
 	return nil
 }

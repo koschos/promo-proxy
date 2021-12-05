@@ -18,31 +18,33 @@ const (
 	port      = "3000"
 )
 
-var feedStorage storage.FeedProxyStorage
+var feedStorage storage.FeedStorage
+var feedTransformer provider.FeedTransformer
 
 func init() {
 	lock := &sync.Mutex{}
-	replacements := []storage.Replacement{
-		storage.NewReplacement("available=\"false\"", "available=\"\""),
-		storage.NewReplacement("available-kiev=\"false\"", "available-kiev=\"\""),
-		storage.NewReplacement("available-kharkov=\"false\"", "available-kharkov=\"\""),
-	}
+	feedStorage = storage.NewMemoryStorage(lock)
 
-	feedStorage = storage.NewMemoryStorage(lock, storage.NewSimpleTransformer(replacements))
+	replacements := []provider.Replacement{
+		provider.NewReplacement("available=\"false\"", "available=\"\""),
+		provider.NewReplacement("available-kiev=\"false\"", "available-kiev=\"\""),
+		provider.NewReplacement("available-kharkov=\"false\"", "available-kharkov=\"\""),
+	}
+	feedTransformer = provider.NewSimpleTransformer(replacements)
 }
 
 func main() {
-	ctx := context.Background()
-
-	feedProvider, err := provider.NewFeedProvider(sourceURL, feedStorage, frequency)
+	feedProvider, err := provider.NewFeedProvider(sourceURL, frequency, feedTransformer, feedStorage)
 	if err != nil {
 		log.Fatalln("failed to create feed provider")
 	}
 
 	startErr := feedProvider.Start()
 	if startErr != nil {
-		log.Fatalln("failed to start feed provider")
+		log.Fatalln("failed to start feed provider: %w", startErr)
 	}
+
+	ctx := context.Background()
 
 	go feedProvider.Run(ctx)
 
