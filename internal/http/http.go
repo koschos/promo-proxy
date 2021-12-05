@@ -34,7 +34,7 @@ func (f *FeedHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	res, err := f.feedStorage.Get()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Printf("feed storage is empty: %w", err)
+		log.Printf("feed storage is empty: %v", err)
 		return
 	}
 

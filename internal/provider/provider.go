@@ -46,7 +46,7 @@ func (s FeedProvider) Run(ctx context.Context) {
 		case <-time.After(s.frequency):
 			err := s.iterate()
 			if err != nil {
-				log.Println("error: %w", err)
+				log.Printf("error: %v\n", err)
 			}
 		case <-ctx.Done():
 			return
@@ -59,14 +59,14 @@ func (s FeedProvider) iterate() error {
 
 	source, err := s.load()
 	if err != nil {
-		return fmt.Errorf("failed to load source: %w", err)
+		return fmt.Errorf("failed to load source: %v", err)
 	}
 
 	res := s.feedTransformer.Transform(source)
 
 	err = s.feedStorage.Save(res)
 	if err != nil {
-		return fmt.Errorf("failed to write source: %w", err)
+		return fmt.Errorf("failed to write source: %v", err)
 	}
 
 	log.Println("transformed feed saved to a storage")

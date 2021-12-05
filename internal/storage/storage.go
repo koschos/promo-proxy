@@ -2,7 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"sync"
+	"sync/atomic"
 )
 
 type FeedStorage interface {
@@ -11,30 +11,24 @@ type FeedStorage interface {
 }
 
 type MemoryFeedStorage struct {
-	lock *sync.Mutex
-	feed string
+	value atomic.Value
 }
 
-func NewMemoryStorage(l *sync.Mutex) *MemoryFeedStorage {
-	return &MemoryFeedStorage{lock: l}
+func NewMemoryStorage() *MemoryFeedStorage {
+	return &MemoryFeedStorage{}
 }
 
 func (m *MemoryFeedStorage) Save(feed string) error {
-	m.lock.Lock()
-	m.feed = feed
-	m.lock.Unlock()
+	m.value.Store(feed)
 	return nil
 }
 
 func (m *MemoryFeedStorage) Get() (string, error) {
-	var res string
-	m.lock.Lock()
-	res = m.feed
-	m.lock.Unlock()
+	res := m.value.Load()
 
-	if res == "" {
+	if res == nil {
 		return "", fmt.Errorf("feed not found")
 	}
 
-	return res, nil
+	return res.(string), nil
 }

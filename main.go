@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	feedhttp "github.com/koschos/promo-proxy/internal/http"
@@ -22,8 +21,7 @@ var feedStorage storage.FeedStorage
 var feedTransformer provider.FeedTransformer
 
 func init() {
-	lock := &sync.Mutex{}
-	feedStorage = storage.NewMemoryStorage(lock)
+	feedStorage = storage.NewMemoryStorage()
 
 	replacements := []provider.Replacement{
 		provider.NewReplacement("available=\"false\"", "available=\"\""),
@@ -50,7 +48,7 @@ func main() {
 
 	feedHandler, err := feedhttp.NewFeedHandler(feedStorage)
 	if err != nil {
-		log.Fatalf("failed to create feed handler: %w", err)
+		log.Fatalf("failed to create feed handler: %v", err)
 	}
 
 	http.HandleFunc("/", feedhttp.Wrapper(feedHandler))
