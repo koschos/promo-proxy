@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/koschos/promo-proxy/internal/storage"
 )
@@ -15,10 +16,10 @@ func Wrapper(f *FeedHandler) func(http.ResponseWriter, *http.Request) {
 }
 
 type FeedHandler struct {
-	feedStorage storage.FeedProxyStorage
+	feedStorage storage.FeedStorage
 }
 
-func NewFeedHandler(s storage.FeedProxyStorage) (*FeedHandler, error) {
+func NewFeedHandler(s storage.FeedStorage) (*FeedHandler, error) {
 	if s == nil {
 		return nil, fmt.Errorf("feed storage must be provided")
 	}
@@ -27,15 +28,19 @@ func NewFeedHandler(s storage.FeedProxyStorage) (*FeedHandler, error) {
 }
 
 func (f *FeedHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	log.Printf("feed called")
+	t := time.Now()
+	log.Printf("start fetching feed")
 
 	res, err := f.feedStorage.Get()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Printf("feedStorage is empty, no feed to provide")
+		log.Printf("feed storage is empty: %w", err)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/xml")
 	w.Write([]byte(res))
+
+	log.Printf("feed fetched in %v", time.Since(t))
 }
