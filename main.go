@@ -14,7 +14,7 @@ import (
 const (
 	sourceURL = "https://intertool.ua/xml_output/yandex_market.xml"
 	frequency = 60 * time.Minute
-	port      = "3000"
+	port      = "80"
 )
 
 var feedStorage storage.FeedStorage
