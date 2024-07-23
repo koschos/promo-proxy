@@ -1,0 +1,23 @@
+name: Tailscale Test
+
+on:
+  push:
+    branches:
+      - '*'
+
+  pull_request:
+      branches:
+        - '*'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: status
+        run: tailscale status
